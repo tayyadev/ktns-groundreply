@@ -1,0 +1,11 @@
+Copyright (c) 2026 KTNSINNOVATIONS LLC. All rights reserved.
+
+This repository is prepared as a proprietary commercial software project.
+No license to redistribute, sublicense, host for third parties, or sell copies
+is granted to any unrelated third party unless authorized in writing by the
+rights holder. The copyright notice does not supersede the licenses applicable
+to external software dependencies, provider APIs, or third-party materials.
+
+Project owner may replace this notice and execute separate customer commercial
+agreements as appropriate. Have qualified counsel review final terms before
+commercial distribution.

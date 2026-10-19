@@ -1,0 +1,5 @@
+[
+  {"question":"How long do I have to return an item?", "must_include":"30 days", "expect_abstain":false},
+  {"question":"Are shipping charges refundable for an ordinary change of mind?", "must_include":"not refundable", "expect_abstain":false},
+  {"question":"Does this company have a lifetime warranty?", "must_include":null, "expect_abstain":true}
+]

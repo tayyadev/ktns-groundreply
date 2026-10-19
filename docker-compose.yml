@@ -1,0 +1,63 @@
+name: ktns-groundreply
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: groundreply
+      POSTGRES_USER: groundreply
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-postgres-only}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U groundreply -d groundreply"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  migrate:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://groundreply:${POSTGRES_PASSWORD:-local-dev-postgres-only}@db:5432/groundreply
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://groundreply:${POSTGRES_PASSWORD:-local-dev-postgres-only}@db:5432/groundreply
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/live', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+  worker:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://groundreply:${POSTGRES_PASSWORD:-local-dev-postgres-only}@db:5432/groundreply
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["python", "-m", "app.worker"]
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+volumes:
+  pgdata:

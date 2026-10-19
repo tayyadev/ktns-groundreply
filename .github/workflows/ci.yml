@@ -1,0 +1,42 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_DB: groundreply
+          POSTGRES_USER: groundreply
+          POSTGRES_PASSWORD: ci-only-password
+        options: >-
+          --health-cmd "pg_isready -U groundreply -d groundreply"
+          --health-interval 5s --health-timeout 3s --health-retries 15
+    env:
+      DATABASE_URL: postgresql+asyncpg://groundreply:ci-only-password@localhost:5432/groundreply
+      JWT_SECRET: ci-very-long-random-secret-placeholder-not-for-production
+      APP_ORIGIN: http://testserver
+      RUN_DB_TESTS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install './backend[dev]'
+      - run: cd backend && alembic upgrade head
+      - run: cd backend && pytest -q
+      - run: cd backend && ruff check app tests --select E4,E7,E9,F63,F7,F82
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: cd frontend && npm install --no-audit --no-fund
+      - run: cd frontend && npm run build
